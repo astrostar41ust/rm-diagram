@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rmdiagram-db
+    environment:
+      POSTGRES_DB: rmdiagram
+      POSTGRES_USER: rmdiagram
+      POSTGRES_PASSWORD: rmdiagram_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rmdiagram"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: rmdiagram-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@rmdiagram.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

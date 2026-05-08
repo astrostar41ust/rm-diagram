@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: rm-diagram
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rmdiagram
+    username: ${DB_USERNAME:rmdiagram}
+    password: ${DB_PASSWORD:rmdiagram_secret}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your-256-bit-secret-change-in-production}
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+  cors:
+    allowed-origins: http://localhost:3000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.rmdiagram
