@@ -13,11 +13,11 @@ export default function DashboardLayout({
   const isOpen = useSidebarStore((s) => s.isOpen);
 
   return (
-    <div className="min-h-svh">
+    <div className="min-h-svh flex">
       <Sidebar />
       <div
         className={cn(
-          "flex flex-col transition-all duration-300",
+          "flex min-h-svh flex-1 flex-col transition-all duration-300",
           isOpen ? "ml-sidebar" : "ml-sidebar-collapsed",
         )}
       >

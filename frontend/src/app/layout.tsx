@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "rm-diagram",
   description: "Personal life management — habits, finances, goals, and notes",
+  icons: { icon: "/logo.svg" },
 };
 
 export default function RootLayout({

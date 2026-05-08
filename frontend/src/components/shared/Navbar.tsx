@@ -2,15 +2,13 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PanelLeft, User, Sun, Moon, LogOut } from "lucide-react";
+import { User, Sun, Moon, LogOut } from "lucide-react";
 import { tokenStorage } from "@/lib/api";
-import { useSidebarStore } from "@/stores/sidebar";
 import { useThemeStore } from "@/stores/theme";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const router = useRouter();
-  const toggleSidebar = useSidebarStore((s) => s.toggle);
   const { theme, toggleTheme } = useThemeStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -33,17 +31,8 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center border-b border-border bg-card px-4">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleSidebar}
-        aria-label="Toggle sidebar"
-      >
-        <PanelLeft className="size-5" />
-      </Button>
-
-      <div className="ml-auto relative" ref={menuRef}>
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-end border-b border-border bg-card px-4">
+      <div className="relative" ref={menuRef}>
         <Button
           variant="ghost"
           size="icon"

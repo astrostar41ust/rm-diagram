@@ -78,6 +78,8 @@
   --font-mono: var(--font-geist-mono);
   --width-sidebar: var(--sidebar);
   --width-sidebar-collapsed: var(--sidebar-collapsed);
+  --spacing-sidebar: var(--sidebar);
+  --spacing-sidebar-collapsed: var(--sidebar-collapsed);
 }
 
 body {

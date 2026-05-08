@@ -3,19 +3,9 @@ import type {
   HabitResponse,
   CreateHabitRequest,
   UpdateHabitRequest,
-  HabitLogResponse,
-  CreateHabitLogRequest,
+  GridResponse,
+  ToggleResponse,
 } from "./types";
-
-export async function getHabits(): Promise<HabitResponse[]> {
-  const res = await api.get<HabitResponse[]>("/api/v1/habits");
-  return res.data;
-}
-
-export async function getHabit(id: number): Promise<HabitResponse> {
-  const res = await api.get<HabitResponse>(`/api/v1/habits/${id}`);
-  return res.data;
-}
 
 export async function createHabit(
   data: CreateHabitRequest,
@@ -28,7 +18,7 @@ export async function updateHabit(
   id: number,
   data: UpdateHabitRequest,
 ): Promise<HabitResponse> {
-  const res = await api.put<HabitResponse>(`/api/v1/habits/${id}`, data);
+  const res = await api.patch<HabitResponse>(`/api/v1/habits/${id}`, data);
   return res.data;
 }
 
@@ -36,19 +26,24 @@ export async function deleteHabit(id: number): Promise<void> {
   await api.delete(`/api/v1/habits/${id}`);
 }
 
-export async function getHabitLogs(habitId: number): Promise<HabitLogResponse[]> {
-  const res = await api.get<HabitLogResponse[]>(
-    `/api/v1/habits/${habitId}/logs`,
-  );
+export async function getGrid(
+  from: string,
+  to: string,
+): Promise<GridResponse> {
+  const res = await api.get<GridResponse>("/api/v1/habits/grid", {
+    params: { from, to },
+  });
   return res.data;
 }
 
-export async function createHabitLog(
-  data: CreateHabitLogRequest,
-): Promise<HabitLogResponse> {
-  const res = await api.post<HabitLogResponse>(
-    `/api/v1/habits/${data.habitId}/logs`,
-    data,
+export async function toggleCompletion(
+  habitId: number,
+  date: string,
+): Promise<ToggleResponse> {
+  const res = await api.post<ToggleResponse>(
+    `/api/v1/habits/${habitId}/toggle`,
+    null,
+    { params: { date } },
   );
   return res.data;
 }

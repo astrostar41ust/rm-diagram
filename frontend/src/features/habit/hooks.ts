@@ -1,33 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getHabits,
-  getHabit,
   createHabit,
   updateHabit,
   deleteHabit,
-  getHabitLogs,
-  createHabitLog,
+  getGrid,
+  toggleCompletion,
 } from "./service";
+import type { GridResponse } from "./types";
 
-const keys = {
-  all: ["habits"] as const,
-  detail: (id: number) => ["habits", id] as const,
-  logs: (habitId: number) => ["habits", habitId, "logs"] as const,
+export const habitKeys = {
+  grid: (from: string, to: string) => ["habits", "grid", from, to] as const,
 };
 
-export function useHabits() {
-  return useQuery({ queryKey: keys.all, queryFn: getHabits });
-}
-
-export function useHabit(id: number) {
-  return useQuery({ queryKey: keys.detail(id), queryFn: () => getHabit(id) });
+export function useHabitGrid(from: string, to: string) {
+  return useQuery({
+    queryKey: habitKeys.grid(from, to),
+    queryFn: () => getGrid(from, to),
+  });
 }
 
 export function useCreateHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createHabit,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.all }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
 }
 
@@ -36,10 +32,7 @@ export function useUpdateHabit(id: number) {
   return useMutation({
     mutationFn: (data: Parameters<typeof updateHabit>[1]) =>
       updateHabit(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.all });
-      qc.invalidateQueries({ queryKey: keys.detail(id) });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
 }
 
@@ -47,22 +40,42 @@ export function useDeleteHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteHabit,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.all }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
 }
 
-export function useHabitLogs(habitId: number) {
-  return useQuery({
-    queryKey: keys.logs(habitId),
-    queryFn: () => getHabitLogs(habitId),
-  });
-}
-
-export function useCreateHabitLog() {
+export function useToggleCompletion(from: string, to: string) {
   const qc = useQueryClient();
+  const queryKey = habitKeys.grid(from, to);
+
   return useMutation({
-    mutationFn: createHabitLog,
-    onSuccess: (_data, variables) =>
-      qc.invalidateQueries({ queryKey: keys.logs(variables.habitId) }),
+    mutationFn: ({ habitId, date }: { habitId: number; date: string }) =>
+      toggleCompletion(habitId, date),
+    onMutate: async ({ habitId, date }) => {
+      await qc.cancelQueries({ queryKey });
+      const previous = qc.getQueryData<GridResponse>(queryKey);
+
+      qc.setQueryData<GridResponse>(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          habits: old.habits.map((h) => {
+            if (h.id !== habitId) return h;
+            const has = h.completions.includes(date);
+            return {
+              ...h,
+              completions: has
+                ? h.completions.filter((d) => d !== date)
+                : [...h.completions, date],
+            };
+          }),
+        };
+      });
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(queryKey, context.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey }),
   });
 }
