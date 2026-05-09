@@ -9,15 +9,16 @@ import {
 
 export const noteKeys = {
   all: ["notes"] as const,
-  list: (page: number, size: number) =>
-    ["notes", "list", page, size] as const,
+  list: (page: number, size: number, q: string) =>
+    ["notes", "list", page, size, q] as const,
   detail: (id: number) => ["notes", "detail", id] as const,
 };
 
-export function useNotes(page = 0, size = 12) {
+export function useNotes(page = 0, size = 12, q = "") {
   return useQuery({
-    queryKey: noteKeys.list(page, size),
-    queryFn: () => getNotes(page, size),
+    queryKey: noteKeys.list(page, size, q),
+    queryFn: () => getNotes(page, size, q || undefined),
+    placeholderData: (prev) => prev,
   });
 }
 

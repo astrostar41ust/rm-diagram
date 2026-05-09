@@ -9,9 +9,10 @@ import type {
 export async function getNotes(
   page = 0,
   size = 12,
+  q?: string,
 ): Promise<PageResponse<NoteResponse>> {
   const res = await api.get<PageResponse<NoteResponse>>("/api/v1/notes", {
-    params: { page, size },
+    params: { page, size, ...(q ? { q } : {}) },
   });
   return res.data;
 }

@@ -36,8 +36,9 @@ public class NoteController {
     public ResponseEntity<Page<NoteDto.Response>> getNotes(
             @AuthenticationPrincipal User user,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(noteService.getNotes(user.getId(), page, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String q) {
+        return ResponseEntity.ok(noteService.getNotes(user.getId(), page, size, q));
     }
 
     @GetMapping("/{id}")

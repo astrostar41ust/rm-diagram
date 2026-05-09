@@ -55,10 +55,12 @@ public class NoteService {
     }
 
     @Transactional(readOnly = true)
-    public Page<NoteDto.Response> getNotes(Long userId, int page, int size) {
+    public Page<NoteDto.Response> getNotes(Long userId, int page, int size, String keyword) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return noteRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId, pageable)
-                .map(NoteDto.Response::from);
+        Page<Note> notes = (keyword == null || keyword.isBlank())
+                ? noteRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId, pageable)
+                : noteRepository.searchNotesByTitleOrContent(userId, keyword.trim(), pageable);
+        return notes.map(NoteDto.Response::from);
     }
 
     @Transactional(readOnly = true)
