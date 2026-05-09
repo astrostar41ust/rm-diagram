@@ -17,6 +17,7 @@ import {
 import { ChevronLeft, ChevronRight, Plus, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useHabitGrid, useToggleCompletion } from "../hooks";
 import { HabitCell } from "./HabitCell";
 import { HabitRow } from "./HabitRow";
@@ -140,8 +141,10 @@ export function HabitGrid() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12 text-muted-foreground">
-          Loading…
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-14" />
+          ))}
         </div>
       ) : habits.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">

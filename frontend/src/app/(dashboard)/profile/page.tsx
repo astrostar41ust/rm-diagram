@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Profile · rm-diagram" };
+
 export default function ProfilePage() {
   return (
     <div className="space-y-6">

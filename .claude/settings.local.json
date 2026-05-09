@@ -18,7 +18,9 @@
       "Bash(npx shadcn@latest add sheet -y)",
       "Bash(pkill -f \"next build\")",
       "Bash(npx tsc *)",
-      "Bash(wsl *)"
+      "Bash(wsl *)",
+      "Bash(curl *)",
+      "Read(//tmp/**)"
     ]
   }
 }

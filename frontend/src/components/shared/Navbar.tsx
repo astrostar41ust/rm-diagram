@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, Sun, Moon, LogOut } from "lucide-react";
-import { tokenStorage } from "@/lib/api";
+import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/theme";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +26,7 @@ export function Navbar() {
   }, [menuOpen]);
 
   function handleLogout() {
-    tokenStorage.clear();
+    useAuthStore.getState().clearAuth();
     router.push("/login");
   }
 

@@ -1,41 +1,41 @@
 import { api } from "@/lib/api";
 import type {
-  TransactionResponse,
+  Category,
+  Transaction,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  TransactionSummary,
+  MonthlySummary,
+  PageResponse,
 } from "./types";
 
-export async function getTransactions(): Promise<TransactionResponse[]> {
-  const res = await api.get<TransactionResponse[]>("/api/v1/transactions");
+export async function getCategories(): Promise<Category[]> {
+  const res = await api.get<Category[]>("/api/v1/categories");
   return res.data;
 }
 
-export async function getTransaction(
-  id: number,
-): Promise<TransactionResponse> {
-  const res = await api.get<TransactionResponse>(`/api/v1/transactions/${id}`);
+export async function getTransactions(
+  page = 0,
+  size = 20,
+  categoryId?: number,
+): Promise<PageResponse<Transaction>> {
+  const res = await api.get<PageResponse<Transaction>>("/api/v1/transactions", {
+    params: { page, size, ...(categoryId ? { categoryId } : {}) },
+  });
   return res.data;
 }
 
 export async function createTransaction(
   data: CreateTransactionRequest,
-): Promise<TransactionResponse> {
-  const res = await api.post<TransactionResponse>(
-    "/api/v1/transactions",
-    data,
-  );
+): Promise<Transaction> {
+  const res = await api.post<Transaction>("/api/v1/transactions", data);
   return res.data;
 }
 
 export async function updateTransaction(
   id: number,
   data: UpdateTransactionRequest,
-): Promise<TransactionResponse> {
-  const res = await api.put<TransactionResponse>(
-    `/api/v1/transactions/${id}`,
-    data,
-  );
+): Promise<Transaction> {
+  const res = await api.patch<Transaction>(`/api/v1/transactions/${id}`, data);
   return res.data;
 }
 
@@ -43,9 +43,9 @@ export async function deleteTransaction(id: number): Promise<void> {
   await api.delete(`/api/v1/transactions/${id}`);
 }
 
-export async function getTransactionSummary(): Promise<TransactionSummary> {
-  const res = await api.get<TransactionSummary>(
-    "/api/v1/transactions/summary",
-  );
+export async function getMonthlySummary(year: number): Promise<MonthlySummary[]> {
+  const res = await api.get<MonthlySummary[]>("/api/v1/transactions/summary", {
+    params: { year },
+  });
   return res.data;
 }

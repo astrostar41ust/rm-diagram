@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { updateNoteSchema, type UpdateNoteFormValues } from "../schema";
-import { useUpdateNote } from "../hooks";
+import { useUpdateNote, useDeleteNote } from "../hooks";
 import { MOOD_OPTIONS } from "../mood";
 import type { Mood, NoteResponse, UpdateNoteRequest } from "../types";
 
@@ -27,6 +28,16 @@ interface EditNoteSheetProps {
 
 export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
   const updateNote = useUpdateNote(note?.id ?? 0);
+  const deleteNote = useDeleteNote();
+
+  function handleDelete() {
+    if (!note) return;
+    const ok = window.confirm(`Delete note "${note.title}"?`);
+    if (!ok) return;
+    deleteNote.mutate(note.id, {
+      onSuccess: () => onOpenChange(false),
+    });
+  }
 
   const {
     register,
@@ -149,12 +160,22 @@ export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
           </div>
         </form>
 
-        <SheetFooter>
+        <SheetFooter className="flex-row gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleDelete}
+            disabled={deleteNote.isPending}
+            className="text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="size-4" data-icon="inline-start" />
+            {deleteNote.isPending ? "Deleting…" : "Delete"}
+          </Button>
           <Button
             type="submit"
             form="edit-note-form"
             disabled={updateNote.isPending}
-            className="w-full"
+            className="flex-1"
           >
             {updateNote.isPending ? "Saving…" : "Save changes"}
           </Button>

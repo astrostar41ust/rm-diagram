@@ -1,29 +1,7 @@
 import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 import type { AuthResponse } from "@/features/auth/types";
-
-const ACCESS_TOKEN_KEY = "rm.accessToken";
-const REFRESH_TOKEN_KEY = "rm.refreshToken";
-
-export const tokenStorage = {
-  getAccessToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
-  },
-  getRefreshToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-  },
-  setTokens(accessToken: string, refreshToken: string) {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  },
-  clear() {
-    if (typeof window === "undefined") return;
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  },
-};
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
@@ -31,31 +9,47 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = tokenStorage.getAccessToken();
+  const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+function isPublicAuthEndpoint(url: string) {
+  return (
+    url.includes("/api/v1/auth/login") ||
+    url.includes("/api/v1/auth/register") ||
+    url.includes("/api/v1/auth/refresh")
+  );
+}
+
 api.interceptors.response.use(
   (response) => {
     const url = response.config.url ?? "";
-    const isAuthEndpoint =
-      url.includes("/api/v1/auth/login") ||
-      url.includes("/api/v1/auth/register") ||
-      url.includes("/api/v1/auth/refresh");
-    if (isAuthEndpoint) {
+    if (isPublicAuthEndpoint(url)) {
       const data = response.data as AuthResponse | undefined;
       if (data?.accessToken && data?.refreshToken) {
-        tokenStorage.setTokens(data.accessToken, data.refreshToken);
+        useAuthStore.getState().setAuth({
+          user: data.user ?? useAuthStore.getState().user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        });
       }
     }
     return response;
   },
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      tokenStorage.clear();
+    const status = error.response?.status;
+    const url = error.config?.url ?? "";
+
+    if (status === 401) {
+      // AuthGuard will pick this up and redirect to /login.
+      useAuthStore.getState().clearAuth();
+    } else if (!isPublicAuthEndpoint(url)) {
+      // Surface unexpected failures via toast. Auth-form errors are shown
+      // inline by the form, so we suppress them here to avoid duplicates.
+      toast.error(getApiErrorMessage(error));
     }
     return Promise.reject(error);
   },

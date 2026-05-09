@@ -9,6 +9,8 @@ export interface UserResponse {
   role: Role;
 }
 
+export type User = UserResponse;
+
 export interface LoginRequest {
   email: string;
   password: string;

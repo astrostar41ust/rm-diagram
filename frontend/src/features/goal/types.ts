@@ -1,18 +1,33 @@
-export type GoalStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
+export type GoalStatus = "ACTIVE" | "COMPLETED";
 
-export interface GoalResponse {
+export interface Milestone {
   id: number;
   title: string;
-  description: string;
-  targetDate: string;
+  completed: boolean;
+  sortOrder: number;
+}
+
+export interface Goal {
+  id: number;
+  title: string;
+  description: string | null;
   status: GoalStatus;
+  targetDate: string | null;
+  sortOrder: number;
+  progress: number;
+  milestones: Milestone[];
   createdAt: string;
+}
+
+export interface CreateMilestoneRequest {
+  title: string;
 }
 
 export interface CreateGoalRequest {
   title: string;
-  description: string;
-  targetDate: string;
+  description?: string;
+  targetDate?: string;
+  milestones?: CreateMilestoneRequest[];
 }
 
 export interface UpdateGoalRequest {
