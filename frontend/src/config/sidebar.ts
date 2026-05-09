@@ -7,6 +7,7 @@ import {
   PiggyBank,
   Target,
   StickyNote,
+  Sparkles,
 } from "lucide-react";
 
 export interface SidebarChildItem {
@@ -40,4 +41,5 @@ export const sidebarConfig: SidebarConfig = [
   },
   { key: "goals", href: "/goals", label: "Goals", icon: Target },
   { key: "notes", href: "/notes", label: "Notes", icon: StickyNote },
+  { key: "ai", href: "/ai", label: "AI Coach", icon: Sparkles },
 ];

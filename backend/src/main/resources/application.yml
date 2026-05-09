@@ -35,6 +35,10 @@ app:
     refresh-expiration-ms: 604800000
   cors:
     allowed-origins: http://localhost:3000
+  ai:
+    provider: ollama
+    ollama-url: http://localhost:11434
+    model: qwen3:8b
 
 springdoc:
   api-docs:
