@@ -8,24 +8,37 @@ import com.rmdiagram.user.UserDto;
 import com.rmdiagram.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int REFRESH_TOKEN_BYTES = 32;
+
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+
+    @Value("${app.jwt.refresh-expiration-ms}")
+    private long refreshTokenExpirationMs;
 
     @Transactional
     public AuthDto.AuthResponse register(AuthDto.RegisterRequest request) {
@@ -60,29 +73,23 @@ public class AuthService {
 
     @Transactional
     public AuthDto.AuthResponse refresh(AuthDto.RefreshTokenRequest request) {
-        RefreshToken stored = refreshTokenRepository.findByToken(request.refreshToken())
-                .orElseThrow(() -> new UnauthorizedException("Refresh token not found"));
-        if (stored.isRevoked() || stored.isExpired()) {
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(sha256Hex(request.refreshToken()))
+                .orElseThrow(() -> new UnauthorizedException("Refresh token invalid"));
+        if (!stored.isActive()) {
             throw new UnauthorizedException("Refresh token expired or revoked");
         }
-        User user = stored.getUser();
-        if (!jwtService.isTokenValid(request.refreshToken(), user)) {
-            throw new UnauthorizedException("Refresh token signature invalid");
-        }
         stored.setRevoked(true);
-        refreshTokenRepository.save(stored);
-        return issueTokens(user);
+        return issueTokens(stored.getUser());
     }
 
     private AuthDto.AuthResponse issueTokens(User user) {
         String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-        RefreshToken stored = RefreshToken.builder()
+        String refreshToken = generateRefreshToken();
+        refreshTokenRepository.save(RefreshToken.builder()
                 .user(user)
-                .token(refreshToken)
-                .expiresAt(Instant.now().plusMillis(jwtService.getRefreshTokenExpirationMs()))
-                .build();
-        refreshTokenRepository.save(stored);
+                .tokenHash(sha256Hex(refreshToken))
+                .expiresAt(Instant.now().plusMillis(refreshTokenExpirationMs))
+                .build());
         return new AuthDto.AuthResponse(
                 accessToken,
                 refreshToken,
@@ -90,5 +97,20 @@ public class AuthService {
                 jwtService.getAccessTokenExpirationMs() / 1000,
                 UserDto.UserResponse.from(user)
         );
+    }
+
+    private static String generateRefreshToken() {
+        byte[] bytes = new byte[REFRESH_TOKEN_BYTES];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static String sha256Hex(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(md.digest(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 }

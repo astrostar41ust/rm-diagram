@@ -3,10 +3,16 @@ import type {
   NoteResponse,
   CreateNoteRequest,
   UpdateNoteRequest,
+  PageResponse,
 } from "./types";
 
-export async function getNotes(): Promise<NoteResponse[]> {
-  const res = await api.get<NoteResponse[]>("/api/v1/notes");
+export async function getNotes(
+  page = 0,
+  size = 12,
+): Promise<PageResponse<NoteResponse>> {
+  const res = await api.get<PageResponse<NoteResponse>>("/api/v1/notes", {
+    params: { page, size },
+  });
   return res.data;
 }
 
@@ -26,7 +32,7 @@ export async function updateNote(
   id: number,
   data: UpdateNoteRequest,
 ): Promise<NoteResponse> {
-  const res = await api.put<NoteResponse>(`/api/v1/notes/${id}`, data);
+  const res = await api.patch<NoteResponse>(`/api/v1/notes/${id}`, data);
   return res.data;
 }
 

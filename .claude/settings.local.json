@@ -16,7 +16,9 @@
       "Bash(curl -s http://localhost:3000/dashboard)",
       "Bash(mvn compile *)",
       "Bash(npx shadcn@latest add sheet -y)",
-      "Bash(pkill -f \"next build\")"
+      "Bash(pkill -f \"next build\")",
+      "Bash(npx tsc *)",
+      "Bash(wsl *)"
     ]
   }
 }

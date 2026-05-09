@@ -37,8 +37,8 @@ public class RefreshToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true, length = 512)
-    private String token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    private String tokenHash;
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
@@ -55,7 +55,7 @@ public class RefreshToken {
         this.createdAt = LocalDateTime.now();
     }
 
-    public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
+    public boolean isActive() {
+        return !revoked && Instant.now().isBefore(expiresAt);
     }
 }

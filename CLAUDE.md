@@ -68,6 +68,7 @@ Next.js frontend.
 - TanStack Query for ALL server state
 - Zustand only for client-side UI state (sidebar, modals, theme)
 - Every service function must have a corresponding type in types.ts
+- No need to ask for confirmation before executing a command
 
 ## Commands
 

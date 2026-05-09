@@ -7,24 +7,33 @@ import {
   deleteNote,
 } from "./service";
 
-const keys = {
+export const noteKeys = {
   all: ["notes"] as const,
-  detail: (id: number) => ["notes", id] as const,
+  list: (page: number, size: number) =>
+    ["notes", "list", page, size] as const,
+  detail: (id: number) => ["notes", "detail", id] as const,
 };
 
-export function useNotes() {
-  return useQuery({ queryKey: keys.all, queryFn: getNotes });
+export function useNotes(page = 0, size = 12) {
+  return useQuery({
+    queryKey: noteKeys.list(page, size),
+    queryFn: () => getNotes(page, size),
+  });
 }
 
 export function useNote(id: number) {
-  return useQuery({ queryKey: keys.detail(id), queryFn: () => getNote(id) });
+  return useQuery({
+    queryKey: noteKeys.detail(id),
+    queryFn: () => getNote(id),
+    enabled: Number.isFinite(id) && id > 0,
+  });
 }
 
 export function useCreateNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createNote,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.all }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: noteKeys.all }),
   });
 }
 
@@ -34,8 +43,8 @@ export function useUpdateNote(id: number) {
     mutationFn: (data: Parameters<typeof updateNote>[1]) =>
       updateNote(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.all });
-      qc.invalidateQueries({ queryKey: keys.detail(id) });
+      qc.invalidateQueries({ queryKey: noteKeys.all });
+      qc.invalidateQueries({ queryKey: noteKeys.detail(id) });
     },
   });
 }
@@ -44,6 +53,6 @@ export function useDeleteNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteNote,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.all }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: noteKeys.all }),
   });
 }
