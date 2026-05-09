@@ -19,6 +19,18 @@ export const metadata: Metadata = {
   icons: { icon: "/logo.svg" },
 };
 
+const themeInitScript = `
+(function () {
+  try {
+    var stored = localStorage.getItem('rm.theme');
+    var theme = (stored === 'dark' || stored === 'light')
+      ? stored
+      : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,8 +39,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>
