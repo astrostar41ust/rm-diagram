@@ -3,7 +3,14 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Database,
+  KeyRound,
+  Settings2,
+  ShieldAlert,
+  UserRound,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,14 +20,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/authStore";
 import { useCurrentUser, useLogout } from "@/features/auth/hooks";
+import { DataSection } from "@/features/dataio/components/DataSection";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   useChangePassword,
+  useDeleteAccount,
   useSettings,
   useUpdateProfile,
   useUpdateSettings,
@@ -34,22 +50,68 @@ import {
   type UpdateProfileFormValues,
 } from "../schema";
 
+const TABS = [
+  { value: "profile", label: "Profile", icon: UserRound },
+  { value: "security", label: "Security", icon: KeyRound },
+  { value: "preferences", label: "Preferences", icon: Settings2 },
+  { value: "data", label: "Data", icon: Database },
+  { value: "danger", label: "Danger zone", icon: ShieldAlert },
+] as const;
+
 export function SettingsPage() {
+  const user = useCurrentUser();
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your profile, security, and preferences.
-        </p>
+    <div className="mx-auto w-full max-w-3xl space-y-6">
+      <div className="flex items-center gap-4">
+        <div className="flex size-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground">
+          {initialsFor(user?.firstname, user?.lastname)}
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {user ? `${user.firstname} ${user.lastname}` : "Settings"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {user?.email ?? "Manage your profile, security, and preferences."}
+          </p>
+        </div>
       </div>
 
-      <ProfileSection />
-      <SecuritySection />
-      <PreferencesSection />
-      <DangerZone />
+      <Tabs defaultValue="profile">
+        <TabsList>
+          {TABS.map(({ value, label, icon: Icon }) => (
+            <TabsTrigger key={value} value={value}>
+              <Icon className="mr-1.5 size-4 shrink-0" />
+              <span className="hidden sm:inline">{label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="profile">
+          <ProfileSection />
+        </TabsContent>
+        <TabsContent value="security">
+          <SecuritySection />
+        </TabsContent>
+        <TabsContent value="preferences">
+          <PreferencesSection />
+        </TabsContent>
+        <TabsContent value="data">
+          <DataSection />
+        </TabsContent>
+        <TabsContent value="danger">
+          <DangerZone />
+        </TabsContent>
+      </Tabs>
     </div>
   );
+}
+
+function initialsFor(firstname?: string, lastname?: string): string {
+  const a = firstname?.[0] ?? "";
+  const b = lastname?.[0] ?? "";
+  const result = `${a}${b}`.toUpperCase();
+  return result || "?";
 }
 
 function ProfileSection() {
@@ -102,7 +164,7 @@ function ProfileSection() {
         <CardDescription>Your account information.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="mb-4 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstname">First name</Label>
@@ -199,7 +261,7 @@ function SecuritySection() {
         <CardDescription>Change your password.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="mb-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Current password</Label>
             <Input
@@ -315,7 +377,7 @@ function PreferencesSection() {
         <CardHeader>
           <CardTitle>Preferences</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="mb-4 space-y-3">
           <Skeleton className="h-9" />
           <Skeleton className="h-9" />
           <Skeleton className="h-9" />
@@ -331,26 +393,28 @@ function PreferencesSection() {
         <CardDescription>How the app looks and behaves.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="mb-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currency">Currency</Label>
-            <select
+            <Combobox
               id="currency"
-              value={currency}
-              onChange={(e) =>
+              placeholder="Select currency…"
+              searchPlaceholder="Search currency…"
+              value={currency ?? null}
+              onChange={(v) =>
                 setValue(
                   "currency",
-                  e.target.value as UpdatePreferencesFormValues["currency"],
+                  v as UpdatePreferencesFormValues["currency"],
                   { shouldDirty: true },
                 )
               }
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              <option value="THB">THB — Thai Baht</option>
-              <option value="USD">USD — US Dollar</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="JPY">JPY — Japanese Yen</option>
-            </select>
+              options={[
+                { value: "THB", label: "THB — Thai Baht" },
+                { value: "USD", label: "USD — US Dollar" },
+                { value: "EUR", label: "EUR — Euro" },
+                { value: "JPY", label: "JPY — Japanese Yen" },
+              ]}
+            />
           </div>
 
           <div className="space-y-2">
@@ -419,6 +483,7 @@ function PreferencesSection() {
 
 function DangerZone() {
   const logout = useLogout();
+  const deleteAccount = useDeleteAccount();
 
   function handleDeleteAccount() {
     const ok = window.confirm(
@@ -430,11 +495,9 @@ function DangerZone() {
     );
     if (!reallyOk) return;
 
-    // TODO: hook up to DELETE /api/v1/users/me when backend supports it.
-    window.alert(
-      "Account deletion is not yet implemented on the backend. You will be logged out for now.",
-    );
-    logout.mutate();
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => logout.mutate(),
+    });
   }
 
   return (
@@ -448,12 +511,24 @@ function DangerZone() {
           Permanently delete your account and all associated data.
         </CardDescription>
       </CardHeader>
+      <CardContent className="mb-4">
+        <p className="text-sm text-muted-foreground">
+          Once you delete your account, all of your habits, transactions, goals,
+          and notes will be removed and cannot be recovered.
+        </p>
+        {deleteAccount.error && (
+          <p className="mt-3 text-sm text-destructive">
+            {getApiErrorMessage(deleteAccount.error)}
+          </p>
+        )}
+      </CardContent>
       <CardFooter>
         <Button
           variant="destructive"
           onClick={handleDeleteAccount}
+          disabled={deleteAccount.isPending}
         >
-          Delete account
+          {deleteAccount.isPending ? "Deleting…" : "Delete account"}
         </Button>
       </CardFooter>
     </Card>

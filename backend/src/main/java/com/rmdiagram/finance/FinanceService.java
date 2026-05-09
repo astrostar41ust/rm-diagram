@@ -2,6 +2,7 @@ package com.rmdiagram.finance;
 
 import com.rmdiagram.exception.BadRequestException;
 import com.rmdiagram.exception.NotFoundException;
+import com.rmdiagram.settings.SettingsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,26 @@ public class FinanceService {
 
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
+    private final SettingsRepository settingsRepository;
+    private final CurrencyService currencyService;
+
+    private String baseCurrency(Long userId) {
+        return settingsRepository.findByUserId(userId)
+                .map(s -> s.getCurrency())
+                .orElse("THB");
+    }
+
+    private String resolveTxCurrency(String requested, Long userId) {
+        if (requested != null && currencyService.isSupported(requested)) {
+            return requested.toUpperCase();
+        }
+        return baseCurrency(userId);
+    }
+
+    private FinanceDto.TransactionResponse toResponse(Transaction t, Category c, String base) {
+        BigDecimal converted = currencyService.convert(t.getAmount(), t.getCurrency(), base);
+        return FinanceDto.TransactionResponse.from(t, c, converted, base);
+    }
 
     @Transactional(readOnly = true)
     public List<FinanceDto.CategoryResponse> getCategories(Long userId) {
@@ -44,12 +65,13 @@ public class FinanceService {
                 .categoryId(category.getId())
                 .type(request.type())
                 .amount(request.amount())
+                .currency(resolveTxCurrency(request.currency(), userId))
                 .note(request.note())
                 .transactionDate(request.transactionDate())
                 .build();
         tx = transactionRepository.save(tx);
         log.debug("Created transaction {} for user {}", tx.getId(), userId);
-        return FinanceDto.TransactionResponse.from(tx, category);
+        return toResponse(tx, category, baseCurrency(userId));
     }
 
     @Transactional
@@ -67,6 +89,9 @@ public class FinanceService {
         }
         if (request.type() != null) tx.setType(request.type());
         if (request.amount() != null) tx.setAmount(request.amount());
+        if (request.currency() != null && currencyService.isSupported(request.currency())) {
+            tx.setCurrency(request.currency().toUpperCase());
+        }
         if (request.note() != null) tx.setNote(request.note());
         if (request.transactionDate() != null) tx.setTransactionDate(request.transactionDate());
 
@@ -77,7 +102,7 @@ public class FinanceService {
 
         tx = transactionRepository.save(tx);
         log.debug("Updated transaction {} for user {}", tx.getId(), userId);
-        return FinanceDto.TransactionResponse.from(tx, category);
+        return toResponse(tx, category, baseCurrency(userId));
     }
 
     @Transactional
@@ -99,19 +124,31 @@ public class FinanceService {
 
         Map<Long, Category> categoriesById = loadCategories(
                 txs.getContent().stream().map(Transaction::getCategoryId).toList());
+        String base = baseCurrency(userId);
 
-        return txs.map(t -> FinanceDto.TransactionResponse.from(t, categoriesById.get(t.getCategoryId())));
+        return txs.map(t -> toResponse(t, categoriesById.get(t.getCategoryId()), base));
     }
 
     @Transactional(readOnly = true)
     public List<FinanceDto.MonthlySummary> getMonthlySummary(Long userId, int year) {
-        return transactionRepository.monthlySummary(userId, year).stream()
-                .map(row -> {
-                    String month = (String) row[0];
-                    BigDecimal income = toBigDecimal(row[1]);
-                    BigDecimal expense = toBigDecimal(row[2]);
-                    return new FinanceDto.MonthlySummary(month, income, expense, income.subtract(expense));
-                })
+        String base = baseCurrency(userId);
+        Map<String, BigDecimal[]> byMonth = new java.util.TreeMap<>();
+        for (Transaction t : transactionRepository.findInYear(userId, year)) {
+            String month = String.format("%d-%02d", t.getTransactionDate().getYear(),
+                    t.getTransactionDate().getMonthValue());
+            BigDecimal converted = currencyService.convert(t.getAmount(), t.getCurrency(), base);
+            BigDecimal[] cell = byMonth.computeIfAbsent(month,
+                    k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            if (t.getType() == TransactionType.INCOME) {
+                cell[0] = cell[0].add(converted);
+            } else {
+                cell[1] = cell[1].add(converted);
+            }
+        }
+        return byMonth.entrySet().stream()
+                .map(e -> new FinanceDto.MonthlySummary(
+                        e.getKey(), e.getValue()[0], e.getValue()[1],
+                        e.getValue()[0].subtract(e.getValue()[1])))
                 .toList();
     }
 

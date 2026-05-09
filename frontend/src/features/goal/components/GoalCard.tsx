@@ -120,8 +120,9 @@ export function GoalCard({ goal }: GoalCardProps) {
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
-                {goal.milestones.filter((m) => m.completed).length} /{" "}
-                {goal.milestones.length} milestones
+                {goal.linkType !== "NONE" && goal.progressLabel
+                  ? goal.progressLabel
+                  : `${goal.milestones.filter((m) => m.completed).length} / ${goal.milestones.length} milestones`}
               </span>
               <span className="font-medium tabular-nums">{goal.progress}%</span>
             </div>
@@ -131,6 +132,12 @@ export function GoalCard({ goal }: GoalCardProps) {
                 style={{ width: `${goal.progress}%` }}
               />
             </div>
+            {goal.linkType !== "NONE" && (
+              <p className="text-[10px] text-muted-foreground">
+                Auto-tracked from{" "}
+                {goal.linkType === "HABIT" ? "habit" : "transactions"}
+              </p>
+            )}
           </div>
         </div>
 

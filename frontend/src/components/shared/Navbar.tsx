@@ -2,10 +2,12 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, Sun, Moon, LogOut } from "lucide-react";
+import { User, Sun, Moon, LogOut, Settings } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/theme";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/features/notification/components/NotificationBell";
+import { GlobalSearchTrigger } from "@/features/search/components/GlobalSearchTrigger";
 
 export function Navbar() {
   const router = useRouter();
@@ -31,7 +33,9 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-end border-b border-border bg-card px-4">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-end gap-2 border-b border-border bg-card px-4">
+      <GlobalSearchTrigger />
+      <NotificationBell />
       <div className="relative" ref={menuRef}>
         <Button
           variant="ghost"
@@ -50,12 +54,12 @@ export function Navbar() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                router.push("/profile");
+                router.push("/settings");
               }}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-popover-foreground hover:bg-muted"
             >
-              <User className="size-4" />
-              Profile
+              <Settings className="size-4" />
+              Settings
             </button>
             <button
               onClick={() => {

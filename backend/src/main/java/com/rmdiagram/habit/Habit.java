@@ -15,6 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "habits")
@@ -51,6 +52,13 @@ public class Habit {
     @Column(nullable = false)
     @Builder.Default
     private Boolean archived = false;
+
+    @Column(name = "reminder_enabled", nullable = false)
+    @Builder.Default
+    private Boolean reminderEnabled = false;
+
+    @Column(name = "reminder_time")
+    private LocalTime reminderTime;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

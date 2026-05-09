@@ -28,6 +28,7 @@ public final class FinanceDto {
             @NotNull Long categoryId,
             @NotNull TransactionType type,
             @NotNull @Positive BigDecimal amount,
+            @Size(max = 10) String currency,
             @Size(max = 500) String note,
             @NotNull LocalDate transactionDate
     ) {}
@@ -36,6 +37,7 @@ public final class FinanceDto {
             Long categoryId,
             TransactionType type,
             @Positive BigDecimal amount,
+            @Size(max = 10) String currency,
             @Size(max = 500) String note,
             LocalDate transactionDate
     ) {}
@@ -48,11 +50,14 @@ public final class FinanceDto {
             String categoryColor,
             TransactionType type,
             BigDecimal amount,
+            String currency,
+            BigDecimal amountInBase,
+            String baseCurrency,
             String note,
             LocalDate transactionDate,
             LocalDateTime createdAt
     ) {
-        public static TransactionResponse from(Transaction t, Category c) {
+        public static TransactionResponse from(Transaction t, Category c, BigDecimal amountInBase, String baseCurrency) {
             return new TransactionResponse(
                     t.getId(),
                     t.getCategoryId(),
@@ -61,6 +66,9 @@ public final class FinanceDto {
                     c != null ? c.getColor() : null,
                     t.getType(),
                     t.getAmount(),
+                    t.getCurrency(),
+                    amountInBase,
+                    baseCurrency,
                     t.getNote(),
                     t.getTransactionDate(),
                     t.getCreatedAt()

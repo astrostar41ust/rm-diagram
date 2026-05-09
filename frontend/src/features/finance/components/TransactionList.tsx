@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -56,22 +57,22 @@ export function TransactionList() {
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h2 className="text-sm font-medium">Transactions</h2>
         <div className="flex items-center gap-2">
-          <select
-            value={filterCategoryId ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              setFilterCategoryId(v ? Number(v) : undefined);
+          <Combobox
+            triggerClassName="h-8 w-44 text-xs"
+            popupWidth="auto"
+            placeholder="All categories"
+            searchPlaceholder="Search categories…"
+            value={filterCategoryId ?? null}
+            onChange={(v) => {
+              setFilterCategoryId(typeof v === "number" ? v : undefined);
               setPage(0);
             }}
-            className="h-8 rounded-md border border-input bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            options={categories.map((c) => ({
+              value: c.id,
+              label: c.name,
+              icon: c.icon ?? undefined,
+            }))}
+          />
           <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="size-4" data-icon="inline-start" />
             Add
@@ -142,15 +143,25 @@ export function TransactionList() {
                     {format(new Date(tx.transactionDate), "MMM d, yyyy")}
                   </p>
                 </div>
-                <p
-                  className={cn(
-                    "shrink-0 text-sm font-semibold tabular-nums",
-                    isIncome ? "text-green-600" : "text-red-500",
+                <div className="shrink-0 text-right">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      isIncome ? "text-green-600" : "text-red-500",
+                    )}
+                  >
+                    {isIncome ? "+" : "-"}
+                    {formatAmount(tx.amount)}{" "}
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      {tx.currency}
+                    </span>
+                  </p>
+                  {tx.currency !== tx.baseCurrency && (
+                    <p className="text-[10px] text-muted-foreground">
+                      ≈ {formatAmount(tx.amountInBase)} {tx.baseCurrency}
+                    </p>
                   )}
-                >
-                  {isIncome ? "+" : "-"}
-                  {formatAmount(tx.amount)}
-                </p>
+                </div>
                 <button
                   onClick={() => handleDelete(tx)}
                   aria-label="Delete transaction"

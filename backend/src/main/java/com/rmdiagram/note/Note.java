@@ -1,8 +1,9 @@
 package com.rmdiagram.note;
 
-import jakarta.persistence.*;  
-import lombok.*;    
-import java.time.LocalDateTime; 
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notes")
@@ -34,6 +35,9 @@ public class Note {
     @Builder.Default
     private boolean deleted=false;
 
+    @Column(name="note_date", nullable=false)
+    private LocalDate noteDate;
+
     @Column(name="created_at", nullable=false)
     private LocalDateTime createdAt;
 
@@ -44,6 +48,9 @@ public class Note {
     @PrePersist
     protected void onCreate() {
         createdAt = updatedAt = LocalDateTime.now();
+        if (noteDate == null) {
+            noteDate = LocalDate.now();
+        }
     }
 
     @PreUpdate

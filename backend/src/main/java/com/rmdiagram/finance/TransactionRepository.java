@@ -30,19 +30,32 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    /**
-     * Returns one row per month: [month "YYYY-MM", totalIncome, totalExpense].
-     * PostgreSQL-specific (TO_CHAR, EXTRACT).
-     */
     @Query(value = """
-            SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS month,
-                   SUM(CASE WHEN type = 'INCOME'  THEN amount ELSE 0 END) AS total_income,
-                   SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) AS total_expense
-            FROM transactions
+            SELECT * FROM transactions
             WHERE user_id = :userId
               AND EXTRACT(YEAR FROM transaction_date) = :year
-            GROUP BY month
-            ORDER BY month
+            ORDER BY transaction_date
             """, nativeQuery = true)
-    List<Object[]> monthlySummary(@Param("userId") Long userId, @Param("year") int year);
+    List<Transaction> findInYear(@Param("userId") Long userId, @Param("year") int year);
+
+    @Query("SELECT t FROM Transaction t " +
+            "WHERE t.userId = :userId " +
+            "AND t.type = 'EXPENSE' " +
+            "AND t.categoryId = :categoryId " +
+            "AND t.transactionDate BETWEEN :from AND :to")
+    List<Transaction> findExpensesForCategoryInRange(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
+    @Query("SELECT t FROM Transaction t " +
+            "WHERE t.userId = :userId " +
+            "AND t.categoryId = :categoryId " +
+            "AND t.transactionDate BETWEEN :from AND :to")
+    List<Transaction> findForCategoryInRange(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

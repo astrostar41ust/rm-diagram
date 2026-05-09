@@ -4,6 +4,7 @@ import type {
   CreateNoteRequest,
   UpdateNoteRequest,
   PageResponse,
+  MoodTrendResponse,
 } from "./types";
 
 export async function getNotes(
@@ -39,4 +40,11 @@ export async function updateNote(
 
 export async function deleteNote(id: number): Promise<void> {
   await api.delete(`/api/v1/notes/${id}`);
+}
+
+export async function getMoodTrend(days = 30): Promise<MoodTrendResponse> {
+  const res = await api.get<MoodTrendResponse>("/api/v1/notes/mood-trend", {
+    params: { days },
+  });
+  return res.data;
 }

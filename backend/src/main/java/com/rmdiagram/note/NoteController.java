@@ -41,6 +41,13 @@ public class NoteController {
         return ResponseEntity.ok(noteService.getNotes(user.getId(), page, size, q));
     }
 
+    @GetMapping("/mood-trend")
+    public ResponseEntity<NoteDto.MoodTrendResponse> getMoodTrend(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(noteService.getMoodTrend(user.getId(), days));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<NoteDto.Response> getNoteById(
             @AuthenticationPrincipal User user,

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public final class HabitDto {
@@ -16,7 +17,9 @@ public final class HabitDto {
             String icon,
             String color,
             @NotNull FrequencyType frequencyType,
-            String scheduleDays
+            String scheduleDays,
+            Boolean reminderEnabled,
+            LocalTime reminderTime
     ) {}
 
     public record UpdateRequest(
@@ -24,7 +27,9 @@ public final class HabitDto {
             String icon,
             String color,
             FrequencyType frequencyType,
-            String scheduleDays
+            String scheduleDays,
+            Boolean reminderEnabled,
+            LocalTime reminderTime
     ) {}
 
     public record Response(
@@ -34,6 +39,8 @@ public final class HabitDto {
             String color,
             FrequencyType frequencyType,
             String scheduleDays,
+            Boolean reminderEnabled,
+            LocalTime reminderTime,
             Boolean archived,
             LocalDateTime createdAt
     ) {
@@ -45,6 +52,8 @@ public final class HabitDto {
                     habit.getColor(),
                     habit.getFrequencyType(),
                     habit.getScheduleDays(),
+                    habit.getReminderEnabled(),
+                    habit.getReminderTime(),
                     habit.getArchived(),
                     habit.getCreatedAt()
             );
@@ -62,7 +71,26 @@ public final class HabitDto {
             String color,
             FrequencyType frequencyType,
             String scheduleDays,
+            Boolean reminderEnabled,
+            LocalTime reminderTime,
             int streak,
             List<LocalDate> completions
+    ) {}
+
+    public record DailyPoint(LocalDate date, boolean completed, boolean scheduled) {}
+
+    public record WeeklyPoint(LocalDate weekStart, int completed, int scheduled) {}
+
+    public record AnalyticsResponse(
+            Long habitId,
+            String name,
+            int windowDays,
+            int currentStreak,
+            int longestStreak,
+            int totalCompletions,
+            int totalScheduled,
+            double completionRate,
+            List<DailyPoint> daily,
+            List<WeeklyPoint> weekly
     ) {}
 }

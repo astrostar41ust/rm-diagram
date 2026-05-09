@@ -5,12 +5,23 @@ import {
   deleteHabit,
   getGrid,
   toggleCompletion,
+  getHabitAnalytics,
 } from "./service";
 import type { GridResponse } from "./types";
 
 export const habitKeys = {
   grid: (from: string, to: string) => ["habits", "grid", from, to] as const,
+  analytics: (id: number, days: number) =>
+    ["habits", "analytics", id, days] as const,
 };
+
+export function useHabitAnalytics(id: number | null, days = 180) {
+  return useQuery({
+    queryKey: habitKeys.analytics(id ?? 0, days),
+    queryFn: () => getHabitAnalytics(id as number, days),
+    enabled: id != null && id > 0,
+  });
+}
 
 export function useHabitGrid(from: string, to: string) {
   return useQuery({

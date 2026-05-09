@@ -73,6 +73,7 @@ export function AddHabitSheet({ open, onOpenChange }: AddHabitSheetProps) {
   const selectedIcon = watch("icon");
   const frequencyType = watch("frequencyType");
   const scheduleDays = watch("scheduleDays");
+  const reminderEnabled = watch("reminderEnabled");
   const selectedDays = scheduleDays?.split(",").filter(Boolean) ?? [];
 
   function toggleDay(day: string) {
@@ -83,8 +84,24 @@ export function AddHabitSheet({ open, onOpenChange }: AddHabitSheetProps) {
   }
 
   function onSubmit(data: CreateHabitFormValues) {
-    createHabit.mutate(data, {
-      onSuccess: () => {
+    const payload = {
+      ...data,
+      reminderTime:
+        data.reminderEnabled && data.reminderTime
+          ? data.reminderTime
+          : undefined,
+      reminderEnabled: !!data.reminderEnabled && !!data.reminderTime,
+    };
+    createHabit.mutate(payload, {
+      onSuccess: async () => {
+        if (
+          payload.reminderEnabled &&
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "default"
+        ) {
+          await Notification.requestPermission();
+        }
         reset();
         onOpenChange(false);
       },
@@ -145,6 +162,30 @@ export function AddHabitSheet({ open, onOpenChange }: AddHabitSheetProps) {
                 </button>
               ))}
             </div>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Custom emoji or letter"
+                maxLength={4}
+                value={
+                  selectedIcon && !PRESET_ICONS.includes(selectedIcon)
+                    ? selectedIcon
+                    : ""
+                }
+                onChange={(e) =>
+                  setValue("icon", e.target.value || undefined)
+                }
+                className="h-8"
+              />
+              {selectedIcon && (
+                <button
+                  type="button"
+                  onClick={() => setValue("icon", undefined)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -166,6 +207,32 @@ export function AddHabitSheet({ open, onOpenChange }: AddHabitSheetProps) {
                   style={{ backgroundColor: color }}
                 />
               ))}
+              <label
+                className={cn(
+                  "flex size-8 cursor-pointer items-center justify-center rounded-full border-2 border-dashed text-xs transition-colors",
+                  selectedColor && !PRESET_COLORS.includes(selectedColor)
+                    ? "border-foreground"
+                    : "border-border text-muted-foreground hover:border-foreground/40",
+                )}
+                style={
+                  selectedColor && !PRESET_COLORS.includes(selectedColor)
+                    ? { backgroundColor: selectedColor }
+                    : undefined
+                }
+                title="Custom color"
+              >
+                +
+                <input
+                  type="color"
+                  value={
+                    selectedColor && !PRESET_COLORS.includes(selectedColor)
+                      ? selectedColor
+                      : "#a855f7"
+                  }
+                  onChange={(e) => setValue("color", e.target.value)}
+                  className="sr-only"
+                />
+              </label>
             </div>
           </div>
 
@@ -223,6 +290,36 @@ export function AddHabitSheet({ open, onOpenChange }: AddHabitSheetProps) {
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="habit-reminder-toggle">Daily reminder</Label>
+              <input
+                id="habit-reminder-toggle"
+                type="checkbox"
+                checked={!!reminderEnabled}
+                onChange={(e) => setValue("reminderEnabled", e.target.checked)}
+                className="size-4 accent-primary"
+              />
+            </div>
+            {reminderEnabled && (
+              <div className="space-y-1">
+                <Input
+                  type="time"
+                  step={60}
+                  {...register("reminderTime")}
+                />
+                {errors.reminderTime && (
+                  <p className="text-xs text-destructive">
+                    {errors.reminderTime.message}
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Browser must be open. We&apos;ll ask for notification permission.
+                </p>
+              </div>
+            )}
+          </div>
         </form>
 
         <SheetFooter>

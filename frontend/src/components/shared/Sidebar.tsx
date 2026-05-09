@@ -29,19 +29,26 @@ function SidebarLink({
   active: boolean;
   indent?: boolean;
 }) {
+  // Sub-items get a softer, tinted highlight with a left accent bar so they
+  // read as secondary to the parent item. Top-level items keep the solid
+  // filled treatment.
+  const activeClass = indent
+    ? "relative bg-primary/10 text-primary before:absolute before:left-3 before:top-1.5 before:bottom-1.5 before:w-0.5 before:rounded-full before:bg-primary"
+    : "bg-primary text-primary-foreground";
+
   return (
     <Link
       href={href}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
+          ? activeClass
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
         !open && "justify-center px-0",
         indent && open && "pl-9",
       )}
     >
-      {Icon && <Icon className="size-5 shrink-0" />}
+      {Icon && <Icon className={cn("shrink-0", indent ? "size-4" : "size-5")} />}
       {open && <span>{label}</span>}
     </Link>
   );
@@ -60,7 +67,12 @@ function SidebarParentItem({
   const toggleItem = useSidebarStore((s) => s.toggleItem);
   const [hovering, setHovering] = useState(false);
   const Icon = item.icon;
-  const parentActive = isActive(pathname, item.href);
+  const childActive = item.children?.some((c) => isActive(pathname, c.href)) ?? false;
+  const isLeafActive = pathname === item.href;
+  // Solid filled state only when the parent route itself is the leaf, not when
+  // a child page owns the highlight.
+  const showFilled = isLeafActive && !childActive;
+  const showSubtle = childActive && !isLeafActive;
 
   if (open) {
     return (
@@ -69,9 +81,11 @@ function SidebarParentItem({
           onClick={() => toggleItem(item.key)}
           className={cn(
             "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            parentActive
+            showFilled
               ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              : showSubtle
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
           <Icon className="size-5 shrink-0" />
@@ -115,9 +129,11 @@ function SidebarParentItem({
       <div
         className={cn(
           "flex items-center justify-center rounded-lg py-2 text-sm font-medium transition-colors",
-          parentActive
+          showFilled
             ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            : showSubtle
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
         <Icon className="size-5 shrink-0" />
@@ -135,7 +151,7 @@ function SidebarParentItem({
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
                 isActive(pathname, child.href)
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary/10 text-primary"
                   : "text-popover-foreground hover:bg-muted",
               )}
             >
@@ -172,7 +188,7 @@ export function Sidebar() {
           <Logo />
           {isOpen && (
             <span className="text-lg font-bold tracking-tight text-foreground">
-              rm-diagram
+              RM Diagram
             </span>
           )}
         </button>

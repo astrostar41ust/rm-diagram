@@ -5,9 +5,16 @@ import {
   Wallet,
   ArrowLeftRight,
   PiggyBank,
+  Repeat,
   Target,
   StickyNote,
   Sparkles,
+  Settings,
+  CreditCard,
+  Banknote,
+  BarChart3,
+  Search,
+  Bell,
 } from "lucide-react";
 
 export interface SidebarChildItem {
@@ -34,12 +41,21 @@ export const sidebarConfig: SidebarConfig = [
     href: "/finance",
     label: "Finance",
     icon: Wallet,
-    // children: [
-    //   { href: "/finance/transactions", label: "Transactions", icon: ArrowLeftRight },
-    //   { href: "/finance/budgets", label: "Budgets", icon: PiggyBank },
-    // ],
+    children: [
+      { href: "/finance/transactions", label: "Transactions", icon: ArrowLeftRight },
+      { href: "/finance/budgets", label: "Budgets", icon: PiggyBank },
+      { href: "/finance/recurring", label: "Recurring", icon: Repeat },
+      { href: "/finance/subscriptions", label: "Subscriptions", icon: CreditCard },
+      { href: "/finance/net-worth", label: "Net worth", icon: Banknote },
+    ],
   },
   { key: "goals", href: "/goals", label: "Goals", icon: Target },
   { key: "notes", href: "/notes", label: "Notes", icon: StickyNote },
+  { key: "insights", href: "/insights", label: "Insights", icon: BarChart3 },
   { key: "ai", href: "/ai", label: "AI Coach", icon: Sparkles },
+  { key: "settings", href: "/settings", label: "Settings", icon: Settings },
 ];
+
+// Navbar uses these icons too — re-export so they stay in sync.
+export const SearchIcon = Search;
+export const NotificationIcon = Bell;

@@ -5,6 +5,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  getMoodTrend,
 } from "./service";
 
 export const noteKeys = {
@@ -12,7 +13,15 @@ export const noteKeys = {
   list: (page: number, size: number, q: string) =>
     ["notes", "list", page, size, q] as const,
   detail: (id: number) => ["notes", "detail", id] as const,
+  moodTrend: (days: number) => ["notes", "mood-trend", days] as const,
 };
+
+export function useMoodTrend(days = 30) {
+  return useQuery({
+    queryKey: noteKeys.moodTrend(days),
+    queryFn: () => getMoodTrend(days),
+  });
+}
 
 export function useNotes(page = 0, size = 12, q = "") {
   return useQuery({

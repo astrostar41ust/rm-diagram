@@ -13,6 +13,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,10 @@ import {
   createTransactionSchema,
   type CreateTransactionFormValues,
 } from "../schema";
+import { Sparkles } from "lucide-react";
 import { useCategories, useCreateTransaction } from "../hooks";
-import type { TransactionType } from "../types";
+import { SUPPORTED_CURRENCIES, type TransactionType } from "../types";
+import { useSuggestCategory } from "@/features/ai/hooks";
 
 interface AddTransactionSheetProps {
   open: boolean;
@@ -34,6 +37,7 @@ export function AddTransactionSheet({
 }: AddTransactionSheetProps) {
   const { data: categories = [] } = useCategories();
   const createTx = useCreateTransaction();
+  const suggest = useSuggestCategory();
 
   const {
     register,
@@ -136,23 +140,20 @@ export function AddTransactionSheet({
 
           <div className="space-y-2">
             <Label htmlFor="tx-category">Category</Label>
-            <select
+            <Combobox
               id="tx-category"
-              value={selectedCategoryId || ""}
-              onChange={(e) =>
-                setValue("categoryId", Number(e.target.value), {
-                  shouldValidate: true,
-                })
+              placeholder="Select a category…"
+              searchPlaceholder="Search categories…"
+              value={selectedCategoryId || null}
+              onChange={(v) =>
+                setValue("categoryId", v as number, { shouldValidate: true })
               }
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              <option value="">Select a category…</option>
-              {filteredCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              options={filteredCategories.map((c) => ({
+                value: c.id,
+                label: c.name,
+                icon: c.icon ?? undefined,
+              }))}
+            />
             {errors.categoryId && (
               <p className="text-xs text-destructive">
                 {errors.categoryId.message}
@@ -162,15 +163,36 @@ export function AddTransactionSheet({
 
           <div className="space-y-2">
             <Label htmlFor="tx-amount">Amount</Label>
-            <Input
-              id="tx-amount"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              {...register("amount", { valueAsNumber: true })}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="tx-amount"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                className="flex-1"
+                {...register("amount", { valueAsNumber: true })}
+              />
+              <Combobox
+                placeholder="Default"
+                searchPlaceholder="Search currency…"
+                triggerClassName="w-28"
+                popupWidth="auto"
+                value={watch("currency") ?? null}
+                onChange={(v) =>
+                  setValue(
+                    "currency",
+                    v ? (v as (typeof SUPPORTED_CURRENCIES)[number]) : undefined,
+                    { shouldValidate: true },
+                  )
+                }
+                options={SUPPORTED_CURRENCIES.map((c) => ({
+                  value: c,
+                  label: c,
+                }))}
+              />
+            </div>
             {errors.amount && (
               <p className="text-xs text-destructive">
                 {errors.amount.message}
@@ -189,7 +211,32 @@ export function AddTransactionSheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tx-note">Note</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="tx-note">Note</Label>
+              <button
+                type="button"
+                disabled={suggest.isPending}
+                onClick={() => {
+                  const note = watch("note")?.trim();
+                  if (!note) return;
+                  suggest.mutate(
+                    { note, type: selectedType },
+                    {
+                      onSuccess: (res) => {
+                        if (res.categoryId)
+                          setValue("categoryId", res.categoryId, {
+                            shouldValidate: true,
+                          });
+                      },
+                    },
+                  );
+                }}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+              >
+                <Sparkles className="size-3" />
+                {suggest.isPending ? "Thinking…" : "Suggest category"}
+              </button>
+            </div>
             <Input
               id="tx-note"
               placeholder="Optional"

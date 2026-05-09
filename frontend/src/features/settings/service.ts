@@ -19,11 +19,6 @@ export async function updateSettings(
   return res.data;
 }
 
-/**
- * TODO: backend does not yet expose a profile-update endpoint.
- * Suggested route: PATCH /api/v1/users/me, returning the updated User.
- * Until that's added, this call will 404.
- */
 export async function updateProfile(
   data: UpdateProfileRequest,
 ): Promise<User> {
@@ -31,13 +26,12 @@ export async function updateProfile(
   return res.data;
 }
 
-/**
- * TODO: backend does not yet expose a password-change endpoint.
- * Suggested route: POST /api/v1/auth/password (verifies current, sets new).
- * Until that's added, this call will 404.
- */
 export async function changePassword(
   data: ChangePasswordRequest,
 ): Promise<void> {
-  await api.post("/api/v1/auth/password", data);
+  await api.post("/api/v1/users/me/password", data);
+}
+
+export async function deleteAccount(): Promise<void> {
+  await api.delete("/api/v1/users/me");
 }

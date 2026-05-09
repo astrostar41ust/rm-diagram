@@ -1,4 +1,5 @@
 export type GoalStatus = "ACTIVE" | "COMPLETED";
+export type GoalLinkType = "NONE" | "HABIT" | "TRANSACTION";
 
 export interface Milestone {
   id: number;
@@ -15,6 +16,11 @@ export interface Goal {
   targetDate: string | null;
   sortOrder: number;
   progress: number;
+  linkType: GoalLinkType;
+  linkTargetId: number | null;
+  targetValue: number | null;
+  currentValue: number | null;
+  progressLabel: string | null;
   milestones: Milestone[];
   createdAt: string;
 }
@@ -28,6 +34,9 @@ export interface CreateGoalRequest {
   description?: string;
   targetDate?: string;
   milestones?: CreateMilestoneRequest[];
+  linkType?: GoalLinkType;
+  linkTargetId?: number;
+  targetValue?: number;
 }
 
 export interface UpdateGoalRequest {
@@ -35,4 +44,7 @@ export interface UpdateGoalRequest {
   description?: string;
   targetDate?: string;
   status?: GoalStatus;
+  linkType?: GoalLinkType;
+  linkTargetId?: number;
+  targetValue?: number;
 }

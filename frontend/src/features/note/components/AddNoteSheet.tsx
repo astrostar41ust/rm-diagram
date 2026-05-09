@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -36,7 +37,11 @@ export function AddNoteSheet({ open, onOpenChange }: AddNoteSheetProps) {
     formState: { errors },
   } = useForm<CreateNoteFormValues>({
     resolver: zodResolver(createNoteSchema),
-    defaultValues: { title: "", content: "" },
+    defaultValues: {
+      title: "",
+      content: "",
+      noteDate: format(new Date(), "yyyy-MM-dd"),
+    },
   });
 
   const selectedMood = watch("mood");
@@ -82,6 +87,16 @@ export function AddNoteSheet({ open, onOpenChange }: AddNoteSheetProps) {
             />
             {errors.title && (
               <p className="text-xs text-destructive">{errors.title.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="note-date">Date</Label>
+            <Input id="note-date" type="date" {...register("noteDate")} />
+            {errors.noteDate && (
+              <p className="text-xs text-destructive">
+                {errors.noteDate.message}
+              </p>
             )}
           </div>
 

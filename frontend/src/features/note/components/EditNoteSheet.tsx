@@ -53,6 +53,7 @@ export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
       content: note?.content ?? "",
       mood: note?.mood ?? undefined,
       tags: note?.tags ?? "",
+      noteDate: note?.noteDate ?? undefined,
     },
   });
 
@@ -63,6 +64,7 @@ export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
         content: note.content,
         mood: note.mood ?? undefined,
         tags: note.tags ?? "",
+        noteDate: note.noteDate,
       });
     }
   }, [note, reset]);
@@ -76,6 +78,7 @@ export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
       content: data.content,
       mood: data.mood,
       tags: data.tags?.trim() ?? "",
+      noteDate: data.noteDate,
     };
     updateNote.mutate(payload, {
       onSuccess: () => onOpenChange(false),
@@ -100,6 +103,20 @@ export function EditNoteSheet({ note, onOpenChange }: EditNoteSheetProps) {
             <Input id="edit-note-title" {...register("title")} />
             {errors.title && (
               <p className="text-xs text-destructive">{errors.title.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-note-date">Date</Label>
+            <Input
+              id="edit-note-date"
+              type="date"
+              {...register("noteDate")}
+            />
+            {errors.noteDate && (
+              <p className="text-xs text-destructive">
+                {errors.noteDate.message}
+              </p>
             )}
           </div>
 

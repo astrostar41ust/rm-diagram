@@ -14,12 +14,12 @@ export function Logo({ className }: { className?: string }) {
         y="24"
         textAnchor="middle"
         fontFamily="system-ui, -apple-system, sans-serif"
-        fontSize="18"
-        fontWeight="700"
-        letterSpacing="-0.5"
+        fontSize="16"
+        fontWeight="800"
+        letterSpacing="0.5"
         className="fill-background"
       >
-        rm
+        RM
       </text>
     </svg>
   );

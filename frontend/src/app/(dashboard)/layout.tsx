@@ -4,7 +4,13 @@ import { AuthGuard } from "@/features/auth/components/AuthGuard";
 import { Sidebar } from "@/components/shared/Sidebar";
 import { Navbar } from "@/components/shared/Navbar";
 import { useSidebarStore } from "@/stores/sidebar";
+import { useHabitReminders } from "@/features/habit/useHabitReminders";
 import { cn } from "@/lib/utils";
+
+function ReminderRunner() {
+  useHabitReminders();
+  return null;
+}
 
 export default function DashboardLayout({
   children,
@@ -15,6 +21,7 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
+      <ReminderRunner />
       <div className="min-h-svh flex">
         <Sidebar />
         <div

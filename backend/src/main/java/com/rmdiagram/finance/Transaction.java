@@ -32,6 +32,10 @@ public class Transaction {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
+    @Column(nullable = false, length = 10)
+    @Builder.Default
+    private String currency = "THB";
+
     @Column(length = 500)
     private String note;
 

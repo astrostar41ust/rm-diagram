@@ -1,5 +1,7 @@
 package com.rmdiagram.ai;
 
+import com.rmdiagram.finance.Category;
+import com.rmdiagram.finance.CategoryRepository;
 import com.rmdiagram.finance.Transaction;
 import com.rmdiagram.finance.TransactionRepository;
 import com.rmdiagram.finance.TransactionType;
@@ -32,6 +34,7 @@ public class AiService {
     private final NoteRepository noteRepository;
     private final TransactionRepository transactionRepository;
     private final GoalRepository goalRepository;
+    private final CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
     public AiDto.GenerateResponse generateWeekSummary(Long userId) {
@@ -104,5 +107,48 @@ public class AiService {
     public AiDto.GenerateResponse generatePrompt(Long userId, String prompt) {
         String response = ollamaClient.generate(prompt);
         return new AiDto.GenerateResponse(response);
+    }
+
+    @Transactional(readOnly = true)
+    public AiDto.SuggestCategoryResponse suggestCategory(
+            Long userId, String note, TransactionType type) {
+        List<Category> candidates = categoryRepository.findByUserIdOrIsDefaultTrue(userId).stream()
+                .filter(c -> c.getType() == type)
+                .toList();
+        if (candidates.isEmpty()) {
+            return new AiDto.SuggestCategoryResponse(null, null);
+        }
+
+        String list = candidates.stream()
+                .map(c -> "- " + c.getName())
+                .collect(Collectors.joining("\n"));
+
+        String prompt = """
+                You categorize a personal-finance transaction.
+                Transaction note: "%s"
+                Transaction type: %s
+
+                Available categories:
+                %s
+
+                Reply with exactly ONE category name from the list above and nothing else.
+                """.formatted(note, type, list);
+
+        String raw = ollamaClient.generate(prompt).trim();
+        String picked = raw.replaceAll("[`\"*\\[\\]]", "").trim();
+
+        Category match = candidates.stream()
+                .filter(c -> c.getName().equalsIgnoreCase(picked))
+                .findFirst()
+                .orElseGet(() -> candidates.stream()
+                        .filter(c -> picked.toLowerCase().contains(c.getName().toLowerCase()))
+                        .findFirst()
+                        .orElse(null));
+
+        if (match == null) {
+            log.debug("AI suggest-category produced unparseable answer '{}'", raw);
+            return new AiDto.SuggestCategoryResponse(null, null);
+        }
+        return new AiDto.SuggestCategoryResponse(match.getId(), match.getName());
     }
 }

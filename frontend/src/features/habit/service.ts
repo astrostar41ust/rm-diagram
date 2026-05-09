@@ -5,6 +5,7 @@ import type {
   UpdateHabitRequest,
   GridResponse,
   ToggleResponse,
+  HabitAnalytics,
 } from "./types";
 
 export async function createHabit(
@@ -44,6 +45,17 @@ export async function toggleCompletion(
     `/api/v1/habits/${habitId}/toggle`,
     null,
     { params: { date } },
+  );
+  return res.data;
+}
+
+export async function getHabitAnalytics(
+  habitId: number,
+  days = 180,
+): Promise<HabitAnalytics> {
+  const res = await api.get<HabitAnalytics>(
+    `/api/v1/habits/${habitId}/analytics`,
+    { params: { days } },
   );
   return res.data;
 }

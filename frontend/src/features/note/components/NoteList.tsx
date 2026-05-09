@@ -12,6 +12,7 @@ import { moodConfig, parseTags } from "../mood";
 import type { NoteResponse } from "../types";
 import { AddNoteSheet } from "./AddNoteSheet";
 import { EditNoteSheet } from "./EditNoteSheet";
+import { MoodTrendChart } from "./MoodTrendChart";
 
 const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -25,17 +26,18 @@ function firstLine(text: string) {
 interface NoteRowProps {
   note: NoteResponse;
   onClick: (note: NoteResponse) => void;
+  onTagClick: (tag: string) => void;
 }
 
-function NoteRow({ note, onClick }: NoteRowProps) {
+function NoteRow({ note, onClick, onTagClick }: NoteRowProps) {
   const mood = note.mood ? moodConfig(note.mood) : null;
   const tags = parseTags(note.tags);
   const preview = firstLine(note.content);
 
   return (
-    <button
+    <div
       onClick={() => onClick(note)}
-      className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50"
+      className="flex w-full cursor-pointer items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -60,20 +62,25 @@ function NoteRow({ note, onClick }: NoteRowProps) {
         {tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {tags.map((tag) => (
-              <span
+              <button
                 key={tag}
-                className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick(tag);
+                }}
+                className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
               >
                 #{tag}
-              </span>
+              </button>
             ))}
           </div>
         )}
       </div>
       <p className="shrink-0 text-xs text-muted-foreground">
-        {format(new Date(note.createdAt), "MMM d, yyyy")}
+        {format(new Date(note.noteDate), "MMM d, yyyy")}
       </p>
-    </button>
+    </div>
   );
 }
 
@@ -118,6 +125,8 @@ export function NoteList() {
           Add
         </Button>
       </div>
+
+      <MoodTrendChart />
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -187,7 +196,11 @@ export function NoteList() {
           >
             {notes.map((note) => (
               <li key={note.id}>
-                <NoteRow note={note} onClick={setEditing} />
+                <NoteRow
+                  note={note}
+                  onClick={setEditing}
+                  onTagClick={(tag) => setSearch(tag)}
+                />
               </li>
             ))}
           </ul>

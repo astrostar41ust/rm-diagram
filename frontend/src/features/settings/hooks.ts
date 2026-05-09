@@ -4,6 +4,7 @@ import {
   updateSettings,
   updateProfile,
   changePassword,
+  deleteAccount,
 } from "./service";
 
 export const settingsKeys = {
@@ -34,5 +35,11 @@ export function useUpdateProfile() {
 export function useChangePassword() {
   return useMutation({
     mutationFn: changePassword,
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: deleteAccount,
   });
 }

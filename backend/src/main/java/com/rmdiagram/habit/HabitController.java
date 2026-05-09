@@ -67,4 +67,12 @@ public class HabitController {
         boolean completed = habitService.toggleCompletion(user.getId(), id, date);
         return ResponseEntity.ok(Map.of("completed", completed));
     }
+
+    @GetMapping("/{id}/analytics")
+    public ResponseEntity<HabitDto.AnalyticsResponse> getAnalytics(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "180") int days) {
+        return ResponseEntity.ok(habitService.getAnalytics(user.getId(), id, days));
+    }
 }

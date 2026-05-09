@@ -6,6 +6,7 @@ export interface NoteResponse {
   content: string;
   mood: Mood | null;
   tags: string | null;
+  noteDate: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +16,7 @@ export interface CreateNoteRequest {
   content: string;
   mood?: Mood;
   tags?: string;
+  noteDate?: string;
 }
 
 export interface UpdateNoteRequest {
@@ -22,6 +24,7 @@ export interface UpdateNoteRequest {
   content?: string;
   mood?: Mood;
   tags?: string;
+  noteDate?: string;
 }
 
 export interface PageResponse<T> {
@@ -33,4 +36,17 @@ export interface PageResponse<T> {
   first: boolean;
   last: boolean;
   empty: boolean;
+}
+
+export interface MoodPoint {
+  date: string;
+  mood: Mood;
+  count: number;
+}
+
+export interface MoodTrendResponse {
+  windowDays: number;
+  totalEntries: number;
+  averageScore: number;
+  points: MoodPoint[];
 }

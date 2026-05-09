@@ -13,10 +13,16 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createGoalSchema, type CreateGoalFormValues } from "../schema";
 import { useCreateGoal } from "../hooks";
+import { useCategories } from "@/features/finance/hooks";
+import { useHabitGrid } from "@/features/habit/hooks";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { GoalLinkType } from "../types";
 
 interface AddGoalSheetProps {
   open: boolean;
@@ -28,6 +34,14 @@ export function AddGoalSheet({ open, onOpenChange }: AddGoalSheetProps) {
 
   const [milestones, setMilestones] = useState<string[]>([]);
   const [milestoneDraft, setMilestoneDraft] = useState("");
+  const [linkType, setLinkType] = useState<GoalLinkType>("NONE");
+  const [linkTargetId, setLinkTargetId] = useState<number | "">("");
+  const [targetValue, setTargetValue] = useState<string>("");
+
+  const { data: categories = [] } = useCategories();
+  const today = format(new Date(), "yyyy-MM-dd");
+  const { data: habitGrid } = useHabitGrid(today, today);
+  const habits = habitGrid?.habits ?? [];
 
   const {
     register,
@@ -43,6 +57,9 @@ export function AddGoalSheet({ open, onOpenChange }: AddGoalSheetProps) {
     reset({ title: "", description: "", targetDate: "" });
     setMilestones([]);
     setMilestoneDraft("");
+    setLinkType("NONE");
+    setLinkTargetId("");
+    setTargetValue("");
   }
 
   function addMilestoneDraft() {
@@ -57,12 +74,17 @@ export function AddGoalSheet({ open, onOpenChange }: AddGoalSheetProps) {
   }
 
   function onSubmit(data: CreateGoalFormValues) {
+    const linkValid =
+      linkType !== "NONE" && linkTargetId && Number(targetValue) > 0;
     createGoal.mutate(
       {
         title: data.title,
         description: data.description?.trim() || undefined,
         targetDate: data.targetDate?.trim() || undefined,
         milestones: milestones.map((title) => ({ title })),
+        linkType: linkValid ? linkType : "NONE",
+        linkTargetId: linkValid ? Number(linkTargetId) : undefined,
+        targetValue: linkValid ? Number(targetValue) : undefined,
       },
       {
         onSuccess: () => {
@@ -124,6 +146,83 @@ export function AddGoalSheet({ open, onOpenChange }: AddGoalSheetProps) {
               type="date"
               {...register("targetDate")}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Auto-track from</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["NONE", "HABIT", "TRANSACTION"] as GoalLinkType[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setLinkType(t);
+                    setLinkTargetId("");
+                  }}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-medium capitalize",
+                    linkType === t
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground",
+                  )}
+                >
+                  {t === "NONE"
+                    ? "Manual"
+                    : t === "HABIT"
+                      ? "Habit"
+                      : "Category"}
+                </button>
+              ))}
+            </div>
+            {linkType === "HABIT" && (
+              <Combobox
+                placeholder="Pick a habit…"
+                searchPlaceholder="Search habits…"
+                value={linkTargetId || null}
+                onChange={(v) =>
+                  setLinkTargetId(typeof v === "number" ? v : "")
+                }
+                options={habits.map((h) => ({
+                  value: h.id,
+                  label: h.name,
+                  icon: h.icon ?? undefined,
+                }))}
+              />
+            )}
+            {linkType === "TRANSACTION" && (
+              <Combobox
+                placeholder="Pick a category…"
+                searchPlaceholder="Search categories…"
+                value={linkTargetId || null}
+                onChange={(v) =>
+                  setLinkTargetId(typeof v === "number" ? v : "")
+                }
+                options={categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                  icon: c.icon ?? undefined,
+                  hint: c.type === "INCOME" ? "in" : "out",
+                }))}
+              />
+            )}
+            {linkType !== "NONE" && (
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder={
+                  linkType === "HABIT" ? "Target completions" : "Target amount"
+                }
+                value={targetValue}
+                onChange={(e) => setTargetValue(e.target.value)}
+              />
+            )}
+            {linkType !== "NONE" && (
+              <p className="text-[10px] text-muted-foreground">
+                Progress updates automatically from your{" "}
+                {linkType === "HABIT" ? "habit completions" : "transactions"}.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

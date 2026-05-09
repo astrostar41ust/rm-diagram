@@ -1,11 +1,19 @@
 package com.rmdiagram.goal;
 
 import com.rmdiagram.exception.NotFoundException;
+import com.rmdiagram.finance.CategoryRepository;
+import com.rmdiagram.finance.CurrencyService;
+import com.rmdiagram.finance.TransactionRepository;
+import com.rmdiagram.habit.HabitCompletionRepository;
+import com.rmdiagram.settings.SettingsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +24,11 @@ public class GoalService {
 
     private final GoalRepository goalRepository;
     private final MilestoneRepository milestoneRepository;
+    private final HabitCompletionRepository habitCompletionRepository;
+    private final TransactionRepository transactionRepository;
+    private final CategoryRepository categoryRepository;
+    private final SettingsRepository settingsRepository;
+    private final CurrencyService currencyService;
 
     @Transactional
     public GoalDto.GoalResponse createGoal(Long userId, GoalDto.CreateGoalRequest request) {
@@ -25,6 +38,9 @@ public class GoalService {
                 .description(request.description())
                 .targetDate(request.targetDate())
                 .status(GoalStatus.ACTIVE)
+                .linkType(request.linkType() != null ? request.linkType() : GoalLinkType.NONE)
+                .linkTargetId(request.linkTargetId())
+                .targetValue(request.targetValue())
                 .build();
         goal = goalRepository.save(goal);
 
@@ -41,7 +57,7 @@ public class GoalService {
         }
         log.debug("Created goal {} with {} milestones for user {}",
                 goal.getId(), milestones.size(), userId);
-        return GoalDto.GoalResponse.from(goal, milestones);
+        return toResponse(goal, milestones);
     }
 
     @Transactional
@@ -51,10 +67,13 @@ public class GoalService {
         if (request.description() != null) goal.setDescription(request.description());
         if (request.targetDate() != null) goal.setTargetDate(request.targetDate());
         if (request.status() != null) goal.setStatus(request.status());
+        if (request.linkType() != null) goal.setLinkType(request.linkType());
+        if (request.linkTargetId() != null) goal.setLinkTargetId(request.linkTargetId());
+        if (request.targetValue() != null) goal.setTargetValue(request.targetValue());
         goal = goalRepository.save(goal);
         List<Milestone> milestones = milestoneRepository.findByGoalIdOrderBySortOrderAsc(goal.getId());
         log.debug("Updated goal {} for user {}", goal.getId(), userId);
-        return GoalDto.GoalResponse.from(goal, milestones);
+        return toResponse(goal, milestones);
     }
 
     @Transactional
@@ -70,8 +89,8 @@ public class GoalService {
                 ? goalRepository.findByUserIdOrderBySortOrderAsc(userId)
                 : goalRepository.findByUserIdAndStatusOrderBySortOrderAsc(userId, status);
         return goals.stream()
-                .map(g -> GoalDto.GoalResponse.from(
-                        g, milestoneRepository.findByGoalIdOrderBySortOrderAsc(g.getId())))
+                .map(g -> toResponse(g,
+                        milestoneRepository.findByGoalIdOrderBySortOrderAsc(g.getId())))
                 .toList();
     }
 
@@ -79,7 +98,7 @@ public class GoalService {
     public GoalDto.GoalResponse getGoalById(Long userId, Long goalId) {
         Goal goal = findUserGoal(userId, goalId);
         List<Milestone> milestones = milestoneRepository.findByGoalIdOrderBySortOrderAsc(goal.getId());
-        return GoalDto.GoalResponse.from(goal, milestones);
+        return toResponse(goal, milestones);
     }
 
     @Transactional
@@ -96,7 +115,7 @@ public class GoalService {
                 .build());
         List<Milestone> all = milestoneRepository.findByGoalIdOrderBySortOrderAsc(goal.getId());
         log.debug("Added milestone to goal {} for user {}", goalId, userId);
-        return GoalDto.GoalResponse.from(goal, all);
+        return toResponse(goal, all);
     }
 
     @Transactional
@@ -117,7 +136,49 @@ public class GoalService {
             }
         }
         log.debug("Toggled milestone {} on goal {} for user {}", milestoneId, goalId, userId);
-        return GoalDto.GoalResponse.from(goal, all);
+        return toResponse(goal, all);
+    }
+
+    private GoalDto.GoalResponse toResponse(Goal goal, List<Milestone> milestones) {
+        if (goal.getLinkType() == null || goal.getLinkType() == GoalLinkType.NONE
+                || goal.getTargetValue() == null || goal.getLinkTargetId() == null) {
+            return GoalDto.GoalResponse.from(goal, milestones, null, null, null);
+        }
+        BigDecimal target = goal.getTargetValue();
+        BigDecimal current;
+        String label;
+        LocalDate since = goal.getCreatedAt().toLocalDate();
+        LocalDate end = goal.getTargetDate() != null && goal.getTargetDate().isBefore(LocalDate.now())
+                ? goal.getTargetDate()
+                : LocalDate.now();
+
+        if (goal.getLinkType() == GoalLinkType.HABIT) {
+            int count = habitCompletionRepository
+                    .findCompletionDatesSince(goal.getLinkTargetId(), since)
+                    .size();
+            current = BigDecimal.valueOf(count);
+            label = count + " / " + target.toPlainString() + " completions";
+        } else {
+            String base = settingsRepository.findByUserId(goal.getUserId())
+                    .map(s -> s.getCurrency())
+                    .orElse("THB");
+            current = transactionRepository
+                    .findForCategoryInRange(goal.getUserId(), goal.getLinkTargetId(), since, end)
+                    .stream()
+                    .map(t -> currencyService.convert(t.getAmount(), t.getCurrency(), base))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            String unit = categoryRepository.findById(goal.getLinkTargetId())
+                    .map(c -> base)
+                    .orElse(base);
+            label = current.setScale(2, RoundingMode.HALF_UP) + " / "
+                    + target.toPlainString() + " " + unit;
+        }
+
+        int progress = target.signum() == 0
+                ? 0
+                : Math.min(100, current.multiply(BigDecimal.valueOf(100))
+                        .divide(target, 0, RoundingMode.HALF_UP).intValue());
+        return GoalDto.GoalResponse.from(goal, milestones, current, label, progress);
     }
 
     @Transactional

@@ -20,7 +20,12 @@
       "Bash(npx tsc *)",
       "Bash(wsl *)",
       "Bash(curl *)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(npx eslint *)",
+      "Bash(mvn -q -o compile)",
+      "Bash(mvn -o compile)",
+      "Bash(mvn -o clean compile)",
+      "Bash(./mvnw -q -DskipTests clean compile)"
     ]
   }
 }

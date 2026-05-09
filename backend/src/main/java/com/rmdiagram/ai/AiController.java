@@ -34,4 +34,12 @@ public class AiController {
         return ResponseEntity.ok(aiService.generatePrompt(user.getId(), request.prompt()));
     }
 
+    @PostMapping("/suggest-category")
+    public ResponseEntity<AiDto.SuggestCategoryResponse> suggestCategory(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody AiDto.SuggestCategoryRequest request) {
+        return ResponseEntity.ok(
+                aiService.suggestCategory(user.getId(), request.note(), request.type()));
+    }
+
 }

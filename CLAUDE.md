@@ -88,6 +88,9 @@ Next.js frontend.
 - docker-compose down -v                     → stop + delete data
 
 ## Git
-- Branch naming: feature/{name}, fix/{name}, chore/{name}
+- Commit directly to the working branch — no separate feature branches.
 - Commit messages: imperative mood, under 72 chars
 - Examples: "add habit tracking feature", "fix JWT refresh logic"
+- Commit every time a noticeable major change is built (e.g. new
+  feature, page redesign, new module) with a proper commit message.
+  Don't batch unrelated work into a single commit.

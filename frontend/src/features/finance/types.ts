@@ -16,6 +16,9 @@ export interface Transaction {
   categoryColor: string | null;
   type: TransactionType;
   amount: number;
+  currency: string;
+  amountInBase: number;
+  baseCurrency: string;
   note: string | null;
   transactionDate: string;
   createdAt: string;
@@ -25,6 +28,7 @@ export interface CreateTransactionRequest {
   categoryId: number;
   type: TransactionType;
   amount: number;
+  currency?: string;
   note?: string;
   transactionDate: string;
 }
@@ -33,9 +37,27 @@ export interface UpdateTransactionRequest {
   categoryId?: number;
   type?: TransactionType;
   amount?: number;
+  currency?: string;
   note?: string;
   transactionDate?: string;
 }
+
+export const SUPPORTED_CURRENCIES = [
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "THB",
+  "SGD",
+  "AUD",
+  "CAD",
+  "CNY",
+  "INR",
+  "KRW",
+  "HKD",
+] as const;
+
+export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number];
 
 export interface MonthlySummary {
   month: string;
